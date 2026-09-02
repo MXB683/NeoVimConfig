@@ -6,6 +6,7 @@ return {
             ensure_installed = {
                 "c", "cpp", "lua", "vim", "vimdoc",
                 "bash", "markdown", "markdown_inline", "json",
+                "python",
             },
             auto_install = true,
         })

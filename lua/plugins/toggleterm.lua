@@ -26,23 +26,62 @@ return {
         -- Generic floating terminal toggle: Ctrl+\
         -- (already handled by open_mapping above)
 
-        -- Run current C/C++ file
-        local function run_c_file()
-            vim.cmd("wa")
-            local file = vim.fn.expand("%:p")       -- full path
-            local out  = vim.fn.expand("%:p:r")     -- path without extension
-            local ft   = vim.bo.filetype
+        local runners = {
+            c = {
+                compile = function(file)
+                    local out = file:match("(.+)%..+$")
+                    return string.format("gcc '%s' -o '%s'", file, out), out
+                end,
+                run = function(_, out)
+                    return string.format("'%s'", out)
+                end,
+            },
+            cpp = {
+                compile = function(file)
+                    local out = file:match("(.+)%..+$")
+                    return string.format("g++ '%s' -o '%s'", file, out), out
+                end,
+                run = function(_, out)
+                    return string.format("'%s'", out)
+                end,
+            },
+            python = {
+                compile = nil, -- interpreted, no compile step
+                run = function(file, _)
+                    -- use venv python if available, fall back to system
+                    local venv = vim.fn.getcwd() .. "/.venv/bin/python3"
+                    local python = vim.fn.filereadable(venv) == 1 and venv or "python3"
+                    return string.format("'%s' '%s'", python, file)
+                end,
+            },
+        }
 
-            if ft ~= "c" and ft ~= "cpp" then
-                vim.notify("Not a C/C++ file", vim.log.levels.WARN)
+        local function run_file()
+            vim.cmd("wa")
+            local file = vim.fn.expand("%:p")
+            local ft   = vim.bo.filetype
+            local runner = runners[ft]
+
+            if not runner then
+                vim.notify("No runner configured for filetype: " .. ft, vim.log.levels.WARN)
                 return
             end
 
-            local compiler = ft == "c" and "gcc" or "g++"
-            local cmd = string.format(
-                "%s '%s' -o '%s' && echo '--- Running ---' && '%s'; echo '--- Exit code: '$?",
-                compiler, file, out, out
-            )
+            local cmd
+            if runner.compile then
+                local compile_cmd, out = runner.compile(file)
+                local run_cmd = runner.run(file, out)
+                cmd = string.format(
+                    "%s && echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+                    compile_cmd, run_cmd
+                )
+            else
+                local run_cmd = runner.run(file, nil)
+                cmd = string.format(
+                    "echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+                    run_cmd
+                )
+            end
 
             local term = Terminal:new({
                 cmd = cmd,
@@ -56,20 +95,19 @@ return {
                         return math.floor(vim.o.lines * 0.85)
                     end,
                 },
-                close_on_exit = false,  -- keep open so you can read output
-                on_open = function(term)
+                close_on_exit = false,
+                on_open = function(t)
                     vim.cmd("startinsert!")
-                    -- Esc closes the terminal window
                     vim.keymap.set("t", "<Esc>", function()
-                        term:close()
-                    end, { buffer = term.bufnr })
+                        t:close()
+                    end, { buffer = t.bufnr })
                 end,
             })
             term:toggle()
         end
 
-        vim.keymap.set("n", "<F9>", run_c_file, { desc = "Compile and run C/C++ file" })
-        vim.keymap.set("n", "<leader>r", run_c_file, { desc = "Compile and run C/C++ file" })
+        vim.keymap.set("n", "<F9>", run_file, { desc = "Run file" })
+        vim.keymap.set("n", "<leader>r", run_file, { desc = "Run file" })
 
         -- Terminal mode: Esc to go back to normal mode inside the generic terminal
         vim.keymap.set("t", "<C-x>", "<C-\\><C-n>", { desc = "Exit terminal mode" })

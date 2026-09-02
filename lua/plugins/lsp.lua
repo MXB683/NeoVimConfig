@@ -49,7 +49,6 @@ return {
                 },
             })
 
-            -- Native 0.11 LSP config
             vim.lsp.config("clangd", {
                 cmd = {
                     "clangd",
@@ -64,6 +63,14 @@ return {
             })
 
             vim.lsp.enable("clangd")
+
+            vim.lsp.config("pyright", {
+                cmd = { "pyright-langserver", "--stdio" },
+                filetypes = { "python" },
+                root_markers = { "pyproject.toml", "setup.py", ".git" },
+            })
+
+            vim.lsp.enable("pyright")
         end,
     },
 }

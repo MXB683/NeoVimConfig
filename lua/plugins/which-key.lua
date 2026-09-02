@@ -15,8 +15,8 @@ return {
         -- Group labels so the popup is organized instead of a flat list
         wk.add({
             { "<leader>d",  group = "Debug" },
-            { "<leader>e",  group = "Explorer" },
             { "<leader>c",  group = "Copilot" },
+            { "<leader>e",  desc = "Search everywhere" },
             { "<F8>",       desc = "DAP: Continue / Start" },
             { "<F9>",       desc = "DAP: Toggle breakpoint" },
             { "<F10>",      desc = "DAP: Compile & debug" },
