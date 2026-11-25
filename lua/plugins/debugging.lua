@@ -6,11 +6,22 @@ return {
             "theHamsta/nvim-dap-virtual-text",
             "nvim-neotest/nvim-nio",
             "williamboman/mason.nvim",
+            "jay-babu/mason-nvim-dap.nvim",
         },
         config = function()
             local dap = require("dap")
             local dapui = require("dapui")
             local code_debugging = require("utils.code_debugging")
+
+            require("mason-nvim-dap").setup({
+                ensure_installed = { "python" },
+                automatic_installation = true,
+                handlers = {
+                    function(config)
+                        require("mason-nvim-dap").default_setup(config)
+                    end,
+                },
+            })
 
             -- Virtual text showing variable values inline
             require("nvim-dap-virtual-text").setup({
@@ -66,12 +77,6 @@ return {
                 },
             }
 
-            dap.adapters.python = {
-                type = "executable",
-                command = "python3",
-                args = { "-m", "debugpy.adapter" },
-            }
-
             -- C and C++ configs
             dap.configurations.c = {
                 {
@@ -95,6 +100,7 @@ return {
                     request = "launch",
                     name    = "Launch file",
                     program = "${file}",
+                    console = "integratedTerminal",
                 },
             }
 
