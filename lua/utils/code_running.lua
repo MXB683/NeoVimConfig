@@ -43,13 +43,13 @@ local function run_current_file(Terminal)
         local compile_cmd, out = runner.compile(file)
         local run_cmd = runner.run(file, out)
         cmd = string.format(
-            "echo '--- Compiling ---' && %s && echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+            "echo '--- Compiling ---' && %s && echo '--- Running ---' && %s && echo '--- Exit code: '$?",
             compile_cmd, run_cmd
         )
     else
         local run_cmd = runner.run(file, nil)
         cmd = string.format(
-            "echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+            "echo '--- Running ---' && %s && echo '--- Exit code: '$?",
             run_cmd
         )
     end
@@ -108,7 +108,7 @@ local function run(Terminal)
         end
         if runconfig["compile"] then -- else is interpreted
             local cmd = string.format(
-                "%s && echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+                "%s && echo '--- Running ---' && %s && echo '--- Exit code: '$?",
                 runconfig["compile"], runconfig["run"]
             )
             local term = Terminal:new({
@@ -138,7 +138,7 @@ local function run(Terminal)
         end
 
         local cmd = string.format(
-            "echo '--- Running ---' && %s; echo '--- Exit code: '$?",
+            "echo '--- Running ---' && %s && echo '--- Exit code: '$?",
             runconfig["run"]
         )
         local term = Terminal:new({

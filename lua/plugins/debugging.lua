@@ -10,6 +10,7 @@ return {
         config = function()
             local dap = require("dap")
             local dapui = require("dapui")
+            local code_debugging = require("utils.code_debugging")
 
             -- Virtual text showing variable values inline
             require("nvim-dap-virtual-text").setup({
@@ -63,6 +64,12 @@ return {
                     command = codelldb_path,
                     args = { "--port", "${port}" },
                 },
+            }
+
+            dap.adapters.python = {
+                type = "executable",
+                command = "python3",
+                args = { "-m", "debugpy.adapter" },
             }
 
             -- C and C++ configs
@@ -119,37 +126,9 @@ return {
             map("<leader>du", dapui.toggle,                                "Toggle DAP UI")
             map("<leader>dx", dap.terminate,                               "Terminate")
 
-            local function compile_and_debug()
-                local file = vim.fn.expand("%:p")
-                local out  = vim.fn.expand("%:p:r") .. "_debug"
-                local ft   = vim.bo.filetype
-
-                if ft ~= "c" and ft ~= "cpp" then
-                    vim.notify("Not a C/C++ file", vim.log.levels.WARN)
-                    return
-                end
-
-                local compiler = ft == "c" and "gcc" or "g++"
-                local cmd = string.format("%s -g -O0 '%s' -o '%s'", compiler, file, out)
-
-                vim.notify("Compiling with debug symbols...", vim.log.levels.INFO)
-
-                local result = vim.fn.system(cmd)
-                if vim.v.shell_error ~= 0 then
-                    vim.notify("Compilation failed:\n" .. result, vim.log.levels.ERROR)
-                    return
-                end
-
-                vim.notify("Compiled: " .. out, vim.log.levels.INFO)
-
-                -- Override the program for this session so no prompt appears
-                dap.configurations.c[1].program = out
-                dap.configurations.cpp[1].program = out
-
-                dap.continue()
-            end
-
-            map("<F10>", compile_and_debug, "Compile (debug) and launch DAP")
+            map("<F10>", function()
+                code_debugging.compile_and_debug(dap)
+            end, "Compile (debug) and launch DAP")
         end,
     },
 }
