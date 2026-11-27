@@ -106,41 +106,22 @@ local function run(Terminal)
                 runconfig[key] = value
             end
         end
-        if runconfig["compile"] then -- else is interpreted
-            local cmd = string.format(
-                "%s && echo '--- Running ---' && %s && echo '--- Exit code: '$?",
-                runconfig["compile"], runconfig["run"]
-            )
-            local term = Terminal:new({
-                cmd = cmd,
-                direction = "float",
-                float_opts = {
-                    border = "curved",
-                    width = function()
-                        return math.floor(vim.o.columns * 0.75)
-                    end,
-                    height = function()
-                        return math.floor(vim.o.lines * 0.75)
-                    end,
-                },
-                close_on_exit = runconfig["keep_terminal_open"] ~= "true",
-                on_open = function(t)
-                    vim.cmd("startinsert!")
-                    vim.keymap.set("t", "<Esc>", function()
-                        t:close()
-                    end, { buffer = t.bufnr })
-                end,
-            })
-            term:toggle()
-        end
         if not runconfig["run"] then
             vim.notify("No run command specified in runconfig!", vim.log.levels.ERROR)
+            return
         end
-
-        local cmd = string.format(
-            "echo '--- Running ---' && %s && echo '--- Exit code: '$?",
-            runconfig["run"]
-        )
+        local cmd
+        if runconfig["compile"] then -- else is interpreted
+            cmd = string.format(
+                "echo '--- Compiling ---' && %s && echo '--- Running ---' && %s && echo '--- Exit code: '$?",
+                runconfig["compile"], runconfig["run"]
+            )
+        else
+            cmd = string.format(
+                "echo '--- Running ---' && %s && echo '--- Exit code: '$?",
+                runconfig["run"]
+            )
+        end
         local term = Terminal:new({
             cmd = cmd,
             direction = "float",
